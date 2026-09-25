@@ -1,71 +1,53 @@
 const form = document.getElementById("assessment-form");
 const formMessage = document.getElementById("form-message");
-
 const yearElement = document.getElementById("year");
 
+const WHATSAPP_NUMBER = "5521993674586";
+
 if (yearElement) {
-    yearElement.textContent = new Date().getFullYear();
+  yearElement.textContent = new Date().getFullYear();
 }
 
 if (form) {
-    form.addEventListener("submit", async function (event) {
-        event.preventDefault();
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
 
-        const submitButton = form.querySelector("button[type='submit']");
+    if (!form.reportValidity()) return;
 
-        submitButton.disabled = true;
-        submitButton.innerHTML = "Enviando...";
+    const data = new FormData(form);
+    const name = String(data.get("name") || "").trim();
+    const phone = String(data.get("phone") || "").trim();
+    const goal = String(data.get("goal") || "").trim();
+    const location = String(data.get("location") || "").trim();
+    const support = String(data.get("support") || "").trim();
 
-        formMessage.textContent = "";
-        formMessage.className = "form-message";
+    if (
+      !name ||
+      !phone ||
+      !goal ||
+      !location ||
+      !support ||
+      data.get("consent") !== "on"
+    ) {
+      formMessage.textContent =
+        "Confira os campos e autorize o contato para continuar.";
+      formMessage.className = "form-message error";
+      return;
+    }
 
-        const formData = new FormData(form);
+    const message = [
+      "Olá, Berg Junior! Gostaria de fazer minha avaliação gratuita.",
+      "",
+      `Nome: ${name}`,
+      `WhatsApp: ${phone}`,
+      `Objetivo: ${goal}`,
+      `Onde treino: ${location}`,
+      `O que busco: ${support}`
+    ].join("\n");
 
-        const data = {
-            name: formData.get("name"),
-            phone: formData.get("phone"),
-            goal: formData.get("goal"),
-            location: formData.get("location"),
-            support: formData.get("support"),
-            consent: formData.get("consent") === "on"
-        };
+    const url =
+      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 
-        try {
-            const response = await fetch("/api/leads", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    result.message || "Não foi possível enviar a avaliação."
-                );
-            }
-
-            formMessage.textContent =
-                "Avaliação enviada com sucesso! Em breve entraremos em contato.";
-
-            formMessage.classList.add("success");
-
-            form.reset();
-
-        } catch (error) {
-            console.error(error);
-
-            formMessage.textContent =
-                error.message || "Ocorreu um erro. Tente novamente.";
-
-            formMessage.classList.add("error");
-
-        } finally {
-            submitButton.disabled = false;
-            submitButton.innerHTML =
-                'Enviar avaliação <span>↗</span>';
-        }
-    });
+    window.location.assign(url);
+  });
 }
